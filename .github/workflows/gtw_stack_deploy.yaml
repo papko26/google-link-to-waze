@@ -75,7 +75,7 @@ jobs:
         username: root
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         source: ./nginx/nginx.conf
-        target: /etc/nginx/nginx.conf
+        target: /etc/nginx
 
     - name: First-time Certbot run (with temporary NGINX container)
       uses: appleboy/ssh-action@v0.1.8
@@ -135,7 +135,7 @@ jobs:
         username: root
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         source: docker-compose.yml
-        target: ${{ env.DEPLOY_DIR }}/docker-compose.yml
+        target: ${{ env.DEPLOY_DIR }}
 
     - name: Deploy via SSH
       uses: appleboy/ssh-action@v0.1.7
@@ -144,7 +144,7 @@ jobs:
         username: root
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          echo "${{ secrets.ENV_FILE }}" > ${{ env.DEPLOY_DIR }}/.env
+          echo "${{ secrets.ENV_FILE }}" > ${{ env.DEPLOY_DIR }}/gtw.env
           cd ${{ env.DEPLOY_DIR }}
           docker compose pull
           docker compose up -d
