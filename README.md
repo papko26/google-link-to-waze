@@ -12,7 +12,7 @@ You finally arrive... at a field in the middle of nowhere. Google swears you're 
 
 Sound familiar?
 
-Then this is exactly what you need! Next time, head over to [waze.papko.org](https://waze.papko.org), paste your Google Maps link, and let this little helper do the rest. You'll be back on track in no time!
+Then this is exactly what you need!
 
 ---
 
