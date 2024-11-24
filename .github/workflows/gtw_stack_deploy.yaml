@@ -146,5 +146,5 @@ jobs:
         script: |
           echo "${{ secrets.ENV_FILE }}" > ${{ env.DEPLOY_DIR }}/.env
           cd ${{ env.DEPLOY_DIR }}
-          docker-compose pull
-          docker-compose up -d
+          docker compose pull
+          docker compose up -d
