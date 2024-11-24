@@ -28,7 +28,7 @@ services:
         target: /etc/nginx/nginx.conf
         read_only: true
       - type: bind
-        source: ./nginx/certs
+        source: /nginx/certs
         target: /etc/letsencrypt
         read_only: true
     restart: always
