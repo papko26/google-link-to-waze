@@ -1,6 +1,6 @@
 # google-link-to-waze
 
-**Translate Google Maps links into Waze-friendly coordinates in no time!**
+**Translate Google Maps links into Waze-friendly coordinates!**
 
 ---
 
