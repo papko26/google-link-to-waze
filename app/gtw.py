@@ -90,6 +90,9 @@ HTML_WRONG = """
         <a href="https://github.com/papko26/google-link-to-waze" target="_blank" class="btn btn-outline-primary">
             Visit the GitHub Repository
         </a>
+        <a href="/" class="btn btn-outline-secondary">
+            Return to Main Page
+        </a>
     </div>
 
     <!-- Optional: Include Bootstrap JS -->
@@ -142,6 +145,9 @@ HTML_BROKEN = """
         <p>If you have any ideas to improve this, you're welcome to contribute:</p>
         <a href="https://github.com/papko26/google-link-to-waze" target="_blank" class="btn btn-outline-primary">
             Visit the GitHub Repository
+        </a>
+        <a href="/" class="btn btn-outline-secondary">
+            Return to Main Page
         </a>
     </div>
 
