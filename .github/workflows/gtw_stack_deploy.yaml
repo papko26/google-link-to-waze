@@ -74,8 +74,8 @@ jobs:
         host: ${{ env.SERVER_DOMAIN }}
         username: root
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: ./nginx/nginx.conf
-        target: /etc/nginx
+        source: nginx/nginx.conf
+        target: /etc
 
     - name: First-time Certbot run (with temporary NGINX container)
       uses: appleboy/ssh-action@v0.1.8
