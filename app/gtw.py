@@ -227,12 +227,19 @@ HTML_TEMPLATE = """
 <!-- Optional: Include Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-    // Function to show the spinner
-    function showSpinner() {
-        document.querySelector('.spinner-overlay').style.display = 'flex';
-    }
-</script>
+    <script>
+        // Show spinner when navigation starts
+        function showSpinner(event) {
+            event.preventDefault(); // Prevent the default link action
+            const spinner = document.getElementById('spinner');
+            spinner.style.display = 'flex';
+
+            // Simulate navigation delay (replace with actual navigation logic if needed)
+            setTimeout(() => {
+                window.location.href = '/'; // Redirect to root after delay
+            }, 2000); // Adjust the delay as needed
+        }
+    </script>
 
 </body>
 </html>
