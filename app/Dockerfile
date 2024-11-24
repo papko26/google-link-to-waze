@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Copy the Python script into the container
 COPY gtw.py /app/app.py
+COPY requirements.txt /app/requirements.txt
 
 # Install dependencies
 RUN pip install -r requirements.txt
