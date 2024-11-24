@@ -134,7 +134,7 @@ jobs:
         host: ${{ env.SERVER_DOMAIN }}
         username: root
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: ./deploy/docker-compose.yml
+        source: .docker-compose.yml
         target: ${{ env.DEPLOY_DIR }}/docker-compose.yml
 
     - name: Deploy via SSH
