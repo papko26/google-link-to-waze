@@ -299,28 +299,32 @@ def is_valid_google_url(url: str) -> bool:
         bool: True if the URL is valid and matches the criteria, False otherwise.
     """
     if not url:
+        logger.debug("No url")
         return False
     try: 
         # Step 0: Check length
         if len(url) > 512:
-            logger.debug(url)
+            logger.debug(f"url is too long: {url}")
             return False
 
         # Step 1: Add 'https://' if no scheme is provided
-        if not urlparse(url).scheme and url.lower().startswith(("http://", "https://")):
+        if not urlparse(url).scheme and url.lower().startswith(("http")):
             url = f"https://{url}"
 
-        if not all([parsed.scheme, parsed.netloc]):
-            logger.debug(url)
+        parsed = urlparse(url)
+        domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
+        if not domain_pattern.match(parsed.netloc):
+            logger.error(f"url did not mathed regex: {url}")
             return False
 
         # Step 2: Validate URL format
         parsed = urlparse(url)
         if not parsed.netloc or not parsed.scheme:
-            logger.debug(url)
+            logger.error(f"url did not mathed netloc/scheme: {url}")
             return False
-    except Exception:
-        logger.debug(url)
+        
+    except Exception as e:
+        logger.debug(f"{url}:{e}")
         return False
 
     # Step 3: Check for 'googl' or valid Google domains
