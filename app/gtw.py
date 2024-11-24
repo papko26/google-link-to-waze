@@ -299,29 +299,31 @@ def is_valid_google_url(url: str) -> bool:
         bool: True if the URL is valid and matches the criteria, False otherwise.
     """
     # Step 0: Check length
-    if len(url) > 512:
-        print(url)
+    if not url:
         return False
+    try: 
+        if len(url) > 512:
+            logger.debug(url)
+            return False
 
-    # Step 1: Add 'https://' if no scheme is provided
-    if not urlparse(url).scheme:
-        url = f"https://{url}"
+        # Step 1: Add 'https://' if no scheme is provided
+        if not urlparse(url).scheme:
+            url = f"https://{url}"
 
-    # Step 2: Validate URL format
-    try:
+        # Step 2: Validate URL format
         parsed = urlparse(url)
         if not parsed.netloc or not parsed.scheme:
-            print(url)
+            logger.debug(url)
             return False
     except Exception:
-        print(url)
+        logger.debug(url)
         return False
 
     # Step 3: Check for 'googl' or valid Google domains
     if "googl" not in url.lower():
         valid_google_domains = ["maps.app.goo.gl", "google.com", "goo.gl"]
         if not any(domain in parsed.netloc for domain in valid_google_domains):
-            print(url)
+            logger.debug(url)
             return False
 
     return True
