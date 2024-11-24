@@ -51,10 +51,11 @@ HTML_WRONG = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>It does not looks like a google link!</title>
+    <title>Not a Google Maps Link!</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
             background-color: #f4f4f9;
             margin: 0;
             padding: 0;
@@ -63,56 +64,36 @@ HTML_WRONG = """
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            text-align: center;
             color: #333;
         }
-        .container {
+        .card {
             max-width: 600px;
-            background: #fff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        h1 {
-            font-size: 2em;
-            color: #e63946;
-        }
-        p {
-            font-size: 1.2em;
-            margin: 10px 0;
-        }
-        a {
-            color: #1d3557;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .footer {
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #666;
+        .btn-outline-primary {
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>It does not looks like a google maps link!</h1>
-        <p>
-            Looks like you gave me the wrong link. At the moment, I can only handle Google Maps.
-            <br>
-            <br>
-            I’m not a frontend guru at all, so I’ll just send you this message to keep things moving.
+    <div class="card bg-white text-center">
+        <h1 class="text-danger">Not a Google Maps Link!</h1>
+        <p class="lead">
+            Looks like you gave me the wrong link. Right now, I can only handle Google Maps URLs. 
+            Let’s keep it simple and straightforward.
         </p>
-            <br>
-        <p>BUT. If you have any ideas to improve this, you're welcome to contribute:</p>
         <p>
-            <a href="https://github.com/papko26/google-link-to-waze" target="_blank">
-                Visit the GitHub Repository
-            </a>
+            If you have ideas to improve this or want to help, feel free to contribute:
         </p>
+        <a href="https://github.com/papko26/google-link-to-waze" target="_blank" class="btn btn-outline-primary">
+            Visit the GitHub Repository
+        </a>
     </div>
+
+    <!-- Optional: Include Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 """
@@ -124,6 +105,8 @@ HTML_BROKEN = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oops, Something Went Wrong!</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -138,50 +121,32 @@ HTML_BROKEN = """
             text-align: center;
             color: #333;
         }
-        .container {
+        .card {
             max-width: 600px;
-            background: #fff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        h1 {
-            font-size: 2em;
-            color: #e63946;
-        }
-        p {
-            font-size: 1.2em;
-            margin: 10px 0;
-        }
-        a {
-            color: #1d3557;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .footer {
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #666;
+        .btn-outline-primary {
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Oops, Something Went Wrong!</h1>
-        <p>
+    <div class="card bg-white text-center">
+        <h1 class="text-danger">Oops, Something Went Wrong!</h1>
+        <p class="lead">
             It seems Google has changed something again, and things are broken. 
             Don’t worry, <strong>I'll let the team know</strong> to fix it as soon as possible.
         </p>
         <p>If you have any ideas to improve this, you're welcome to contribute:</p>
-        <p>
-            <a href="https://github.com/papko26/google-link-to-waze" target="_blank">
-                Visit the GitHub Repository
-            </a>
-        </p>
+        <a href="https://github.com/papko26/google-link-to-waze" target="_blank" class="btn btn-outline-primary">
+            Visit the GitHub Repository
+        </a>
     </div>
+
+    <!-- Optional: Include Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 """
@@ -228,6 +193,19 @@ HTML_TEMPLATE = """
             </form>
         </div>
     </div>
+
+    <!-- Contribution Section -->
+    <div class="card shadow mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Contribute</h5>
+            <p class="card-text">
+                Have ideas to make this better? Check out the project on GitHub and share your suggestions or improvements:
+            </p>
+            <a href="https://github.com/papko26/google-link-to-waze" target="_blank" class="btn btn-outline-primary">
+                GitHub Repository
+            </a>
+        </div>
+    </div>
 </div>
 
 <!-- Spinner Overlay -->
@@ -246,14 +224,6 @@ HTML_TEMPLATE = """
         document.querySelector('.spinner-overlay').style.display = 'flex';
     }
 </script>
-
-    <div class="container">
-        <p>If you have any ideas to improve this, you're welcome to contribute:</p>
-        <p>
-            <a href="https://github.com/papko26/google-link-to-waze" target="_blank">
-                Visit the GitHub Repository
-            </a>
-    </div>
 
 </body>
 </html>
