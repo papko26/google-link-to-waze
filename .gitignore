@@ -1,0 +1,6 @@
+*.env
+*.secret
+/scratches
+*.scratch
+.DS_Store
+*.log

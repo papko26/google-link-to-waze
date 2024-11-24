@@ -1,0 +1,128 @@
+  # I know, I should be using a proper deployment pipeline, like Ansible.  
+  # But honestly, I'm too lazy to wrestle with those annoying Ansible bugs for days.
+  # Sorry, not sorry.
+
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    env:
+      SERVER_DOMAIN: waze.papko.org       # Define server domain as a variable
+      ADMIN_EMAIL: your-email@example.com # Define email as a variable
+      IMAGE_NAME: papko26/gtw             # Docker image name
+      DEPLOY_DIR: /etc/gtw                # Deployment directory on the server
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Get commit hash
+      id: commit
+      run: echo "COMMIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push Docker images
+      run: |
+        # Build the image
+        docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ env.COMMIT_SHA }} ./app
+        
+        # Push both tags
+        docker push ${{ env.IMAGE_NAME }}:latest
+        docker push ${{ env.IMAGE_NAME }}:${{ env.COMMIT_SHA }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    env:
+      SERVER_DOMAIN: waze.papko.org       # Define server domain as a variable
+      ADMIN_EMAIL: your-email@example.com # Define email as a variable
+      IMAGE_NAME: papko26/gtw             # Docker image name
+      DEPLOY_DIR: /etc/gtw                # Deployment directory on the server
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Ensure necessary directories exist
+      uses: appleboy/ssh-action@v0.1.8
+      with:
+        host: ${{ env.SERVER_DOMAIN }}
+        username: root
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          mkdir -p /etc/nginx/certs
+          mkdir -p /etc/nginx/certs-data
+          mkdir -p /var/www/certbot
+          mkdir -p ${{ env.DEPLOY_DIR }}
+
+    - name: Copy NGINX configuration to the server
+      uses: appleboy/scp-action@v0.1.8
+      with:
+        host: ${{ env.SERVER_DOMAIN }}
+        username: root
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: ./nginx/nginx.conf
+        target: /etc/nginx/nginx.conf
+
+    - name: First-time Certbot run (if needed)
+      uses: appleboy/ssh-action@v0.1.8
+      with:
+        host: ${{ env.SERVER_DOMAIN }}
+        username: root
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          if [ ! -f /etc/nginx/certs/live/${{ env.SERVER_DOMAIN }}/fullchain.pem ]; then
+            echo "Certificate not found. Running Certbot for the first time."
+            docker run --rm \
+              -v /etc/nginx/certs:/etc/letsencrypt \
+              -v /var/www/certbot:/var/www/certbot \
+              certbot/certbot certonly --webroot \
+              --webroot-path=/var/www/certbot \
+              --email ${{ env.ADMIN_EMAIL }} --agree-tos --no-eff-email \
+              -d ${{ env.SERVER_DOMAIN }}
+          else
+            echo "Certificate already exists. Skipping Certbot step."
+          fi
+
+    - name: Reload NGINX
+      uses: appleboy/ssh-action@v0.1.8
+      with:
+        host: ${{ env.SERVER_DOMAIN }}
+        username: root
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          nginx -t && systemctl reload nginx
+
+    - name: Copy docker-compose.yml to the server
+      uses: appleboy/scp-action@v0.1.8
+      with:
+        host: ${{ env.SERVER_DOMAIN }}
+        username: root
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: ./deploy/docker-compose.yml
+        target: ${{ env.DEPLOY_DIR }}/docker-compose.yml
+
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v0.1.8
+      with:
+        host: ${{ env.SERVER_DOMAIN }}
+        username: root
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          echo "${{ secrets.ENV_FILE }}" > ${{ env.DEPLOY_DIR }}/.env
+          cd ${{ env.DEPLOY_DIR }}
+          docker-compose pull
+          docker-compose up -d

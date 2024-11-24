@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  app:
+    image: papko26/gtw:latest
+    container_name: gtw
+    ports:
+      - "5000:5000"
+    env_file:
+      - gtw.env
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - FLASK_ENV=${FLASK_ENV}
+      - FLASK_DEBUG=${FLASK_DEBUG}
+    restart: always
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - type: bind
+        source: /etc/nginx/nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+      - type: bind
+        source: ./nginx/certs
+        target: /etc/letsencrypt
+        read_only: true
+    restart: always
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - type: bind
+        source: /etc/nginx/certs
+        target: /etc/letsencrypt
+      - type: bind
+        source: /etc/nginx/certs-data
+        target: /var/lib/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 6h & wait $${!}; certbot renew; done'"
+    restart: unless-stopped
