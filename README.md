@@ -19,7 +19,7 @@ Then this is exactly what you need!
 ## How It Works
 
 1. Copy the Google Maps link you've been sent.
-2. Paste it into (not yet, coming soon) [waze.papko.org](https://waze.papko.org).
+2. Paste it into [waze.papko.org](https://waze.papko.org).
 3. Click the button and you'l be redirected to Waze
 
 This stack hosts a web server that translates Google Maps links into Waze-compatible destinations. No more guesswork, no more detours—just navigation made simple.
@@ -42,7 +42,7 @@ Same as for Wazers - feel free to reach me you have any concerns.
 ## Stack
 
 - **Backend and Frontend**: Python (Flask) for logic and HTML rendering (contributions are always welcome)
-- **Reverse Proxy**: NGINX  
+- **TLS termination and rate limiting**: NGINX 
 - **SSL**: Managed via Certbot (Let’s Encrypt)  
 - **Containerized**: Docker Compose orchestrating the magic  
 

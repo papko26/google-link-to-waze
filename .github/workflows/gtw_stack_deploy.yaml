@@ -147,4 +147,4 @@ jobs:
           echo "${{ secrets.ENV_FILE }}" > ${{ env.DEPLOY_DIR }}/gtw.env
           cd ${{ env.DEPLOY_DIR }}
           docker compose pull
-          docker compose up -d
+          docker compose up -d --force-recreate

@@ -100,7 +100,7 @@ HTML_WRONG = """
     <div class="container">
         <h1>It does not looks like a google maps link!</h1>
         <p>
-            Look like you gave me the wrong link. At the moment, I can only handle Google Maps.
+            Looks like you gave me the wrong link. At the moment, I can only handle Google Maps.
             <br>
             <br>
             I’m not a frontend guru at all, so I’ll just send you this message to keep things moving.
