@@ -298,17 +298,21 @@ def is_valid_google_url(url: str) -> bool:
     Returns:
         bool: True if the URL is valid and matches the criteria, False otherwise.
     """
-    # Step 0: Check length
     if not url:
         return False
     try: 
+        # Step 0: Check length
         if len(url) > 512:
             logger.debug(url)
             return False
 
         # Step 1: Add 'https://' if no scheme is provided
-        if not urlparse(url).scheme:
+        if not urlparse(url).scheme and url.lower().startswith(("http://", "https://")):
             url = f"https://{url}"
+
+        if not all([parsed.scheme, parsed.netloc]):
+            logger.debug(url)
+            return False
 
         # Step 2: Validate URL format
         parsed = urlparse(url)
