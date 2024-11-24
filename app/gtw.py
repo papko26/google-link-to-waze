@@ -227,12 +227,28 @@ HTML_TEMPLATE = """
 <!-- Optional: Include Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-    // Function to show the spinner
-    function showSpinner() {
-        document.querySelector('.spinner-overlay').style.display = 'flex';
-    }
-</script>
+    <script>
+        // Function to show the spinner
+        function showSpinner() {
+            const spinner = document.querySelector('.spinner-overlay');
+            spinner.style.display = 'flex';
+
+            // Simulate a redirect check
+            setTimeout(() => {
+                // Redirect condition
+                if (document.readyState === "complete") {
+                    stopSpinnerAndRedirect();
+                }
+            }, 3000);
+        }
+
+        // Function to stop spinner and redirect to root
+        function stopSpinnerAndRedirect() {
+            const spinner = document.querySelector('.spinner-overlay');
+            spinner.style.display = 'none';
+            window.location.href = '/'; // Redirect to root
+        }
+    </script>
 
 </body>
 </html>
