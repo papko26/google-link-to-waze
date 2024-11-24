@@ -41,8 +41,7 @@ Same as for Wazers - feel free to reach me you have any concerns.
 
 ## Stack
 
-- **Backend**: Python (Flask)  
-- **Frontend**: Simple HTML with a touch of elegance  
+- **Backend and Frontend**: Python (Flask) for logic and HTML rendering (contributions are always welcome)
 - **Reverse Proxy**: NGINX  
 - **SSL**: Managed via Certbot (Let’s Encrypt)  
 - **Containerized**: Docker Compose orchestrating the magic  

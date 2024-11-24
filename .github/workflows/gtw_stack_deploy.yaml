@@ -77,34 +77,56 @@ jobs:
         source: ./nginx/nginx.conf
         target: /etc/nginx/nginx.conf
 
-    - name: First-time Certbot run (if needed)
-      uses: appleboy/ssh-action@v0.1.7
+    - name: First-time Certbot run (with temporary NGINX container)
+      uses: appleboy/ssh-action@v0.1.8
       with:
         host: ${{ env.SERVER_DOMAIN }}
         username: root
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          if [ ! -f /etc/nginx/certs/live/${{ env.SERVER_DOMAIN }}/fullchain.pem ]; then
-            echo "Certificate not found. Running Certbot for the first time."
-            docker run --rm \
-              -v /etc/nginx/certs:/etc/letsencrypt \
-              -v /var/www/certbot:/var/www/certbot \
-              certbot/certbot certonly --webroot \
-              --webroot-path=/var/www/certbot \
-              --email ${{ env.ADMIN_EMAIL }} --agree-tos --no-eff-email \
-              -d ${{ env.SERVER_DOMAIN }}
-          else
-            echo "Certificate already exists. Skipping Certbot step."
+          # Check if the certificate already exists
+          if [ -f /etc/nginx/certs/live/${{ env.SERVER_DOMAIN }}/fullchain.pem ]; then
+              echo "Certificate already exists. Skipping Certbot step."
+              exit 0
           fi
 
-    - name: Reload NGINX
-      uses: appleboy/ssh-action@v0.1.7
-      with:
-        host: ${{ env.SERVER_DOMAIN }}
-        username: root
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          nginx -t && systemctl reload nginx
+          # Ensure the ACME challenge directory exists
+          mkdir -p /var/www/certbot
+
+          # Start a temporary NGINX container to handle the challenge
+          docker run -d --name temp-nginx \
+            -p 80:80 \
+            -v /var/www/certbot:/var/www/certbot:ro \
+            --entrypoint "/bin/sh" nginx:latest -c "
+          echo '
+          server {
+              listen 80;
+              server_name ${{ env.SERVER_DOMAIN }};
+
+              location /.well-known/acme-challenge/ {
+                  root /var/www/certbot;
+              }
+
+              location / {
+                  return 404;
+              }
+          }
+          ' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+
+          # Wait for the container to start
+          sleep 5
+
+          # Run Certbot to obtain certificates
+          docker run --rm \
+            -v /etc/nginx/certs:/etc/letsencrypt \
+            -v /var/www/certbot:/var/www/certbot \
+            certbot/certbot certonly --webroot \
+            --webroot-path=/var/www/certbot \
+            --email ${{ env.ADMIN_EMAIL }} --agree-tos --no-eff-email \
+            -d ${{ env.SERVER_DOMAIN }}
+
+          # Stop and remove the temporary NGINX container
+          docker stop temp-nginx && docker rm temp-nginx
 
     - name: Copy docker-compose.yml to the server
       uses: appleboy/scp-action@v0.1.7
