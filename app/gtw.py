@@ -166,12 +166,29 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open in Waze</title>
+    <title>Not a Google Maps Link!</title>
+    <!-- Favicon -->
     <link rel="icon" href="https://cdnjs.cloudflare.com/ajax/libs/emojione/2.2.7/assets/png/1f30d.png" type="image/png">
     <!-- Include Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Center the spinner overlay */
+        body {
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #333;
+        }
+        .card {
+            max-width: 600px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
         .spinner-overlay {
             position: fixed;
             top: 0;
@@ -179,61 +196,66 @@ HTML_TEMPLATE = """
             width: 100%;
             height: 100%;
             background: rgba(255, 255, 255, 0.8);
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
             z-index: 9999;
-            display: none; /* Hidden by default */
+        }
+        .btn {
+            margin-top: 15px;
+            margin-right: 10px;
         }
     </style>
 </head>
-<body class="bg-light">
-
-<div class="container mt-5">
-    <div class="card shadow">
-        <div class="card-body">
-            <h1 class="card-title text-center mb-4">Google Maps URL to Waze</h1>
-            <form method="post" class="text-center" onsubmit="showSpinner()">
-                <div class="mb-3">
-                    <label for="url" class="form-label">Enter Google Maps URL:</label>
-                    <input type="text" id="url" name="url" class="form-control" placeholder="Paste your Google Maps link here" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Open In Waze</button>
-            </form>
+<body>
+    <div class="spinner-overlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
     </div>
 
-    <!-- Contribution Section -->
-    <div class="card shadow mt-4">
-        <div class="card-body">
-            <h5 class="card-title">Contribute</h5>
-            <p class="card-text">
-                Have ideas to make this better? Check out the project on GitHub and share your suggestions or improvements:
-            </p>
-            <a href="https://github.com/papko26/google-link-to-waze" target="_blank" class="btn btn-outline-primary">
-                GitHub Repository
-            </a>
-        </div>
+    <div class="card bg-white text-center">
+        <h1 class="text-danger">Not a Google Maps Link!</h1>
+        <p class="lead">
+            Looks like you gave me the wrong link. Right now, I can only handle Google Maps URLs. 
+            Let’s keep it simple and straightforward.
+        </p>
+        <p>
+            If you have ideas to improve this or want to help, feel free to contribute:
+        </p>
+        <a href="https://github.com/papko26/google-link-to-waze" target="_blank" class="btn btn-outline-primary">
+            Visit the GitHub Repository
+        </a>
+        <a href="/" class="btn btn-outline-secondary">
+            Return to Main Page
+        </a>
     </div>
-</div>
 
-<!-- Spinner Overlay -->
-<div class="spinner-overlay">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-    </div>
-</div>
+    <!-- Optional: Include Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Optional: Include Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to show the spinner
+        function showSpinner() {
+            const spinner = document.querySelector('.spinner-overlay');
+            spinner.style.display = 'flex';
 
-<script>
-    // Function to show the spinner
-    function showSpinner() {
-        document.querySelector('.spinner-overlay').style.display = 'flex';
-    }
-</script>
+            // Simulate a redirect check
+            setTimeout(() => {
+                // Redirect condition
+                if (document.readyState === "complete") {
+                    stopSpinnerAndRedirect();
+                }
+            }, 3000);
+        }
 
+        // Function to stop spinner and redirect to root
+        function stopSpinnerAndRedirect() {
+            const spinner = document.querySelector('.spinner-overlay');
+            spinner.style.display = 'none';
+            window.location.href = '/'; // Redirect to root
+        }
+    </script>
 </body>
 </html>
 """
