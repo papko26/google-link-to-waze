@@ -1,0 +1,3 @@
+GOOGLE_API_KEY=XXX (https://console.cloud.google.com/google/maps-apis/credentials)
+FLASK_ENV=production
+FLASK_DEBUG=0
