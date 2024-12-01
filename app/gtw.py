@@ -426,7 +426,8 @@ def index():
             fasttrack = extract_coordinates_with_regex(url)
             if fasttrack:
                 logger.debug("index: fastrack succsess")
-                return waze_link_from_coords(fasttrack)
+                waze_lnk = waze_link_from_coords(fasttrack)
+                return redirect(waze_lnk)
 
             logger.debug("index: trying default flow")
             wlink = get_wise_link(url, args.gcp_maps_api_key)
