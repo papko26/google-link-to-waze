@@ -372,6 +372,12 @@ def get_coordinates_from_place_id(place_id, api_key):
 
 def extract_coordinates_with_regex(url):
     try:
+        # Sometimes /places link may contain coordinates of the location, which
+        # user browsed after he chosed the destination.
+        # Lets ensure we will not try to parse it.
+        if "/place/" in url:
+            logger.debug("fastrrack: it is a 'places' link, parsing skipped")
+            return None
         # Regex pattern to match latitude and longitude pairs
         pattern = r".*?(\d\d\.\d\d\d+).*?(\d\d\.\d\d\d+)"
         match = re.search(pattern, url)
