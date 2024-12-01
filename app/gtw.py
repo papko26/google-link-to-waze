@@ -260,16 +260,17 @@ def places_api_parse_cid(shitty_link):
         # Regex pattern to match latitude and longitude pairs
         logger.debug("places_api_parse_cid: Now will try resolve it as Google Place")
         logger.debug(shitty_link)
-        pattern = r"ftid.*:(\w+)"
-        match = re.search(pattern, shitty_link)
-        if match:
-            # Extract cid in hex
-            cid_hex = match.groups()[0]
-            logger.debug(f"cid hex is: {cid_hex}")
-            if cid_hex:
-                cid = hex_to_decimal(cid_hex)
-                logger.debug(f"cid is: {cid}")
-            return cid
+        patterns = [r"ftid.*:(\w+)",r"/data=.*0x(\w+)"]
+        for pattern in patterns:
+            match = re.search(pattern, shitty_link)
+            if match:
+                # Extract cid in hex
+                cid_hex = match.groups()[0]
+                logger.debug(f"cid hex is: {cid_hex}")
+                if cid_hex:
+                    cid = hex_to_decimal(cid_hex)
+                    logger.debug(f"cid is: {cid}")
+                return cid
     except Exception as e:
         logger.error(f"Error extracting cid: {e}")
     logger.error("places_api_parse_cid: failed to parse cid")
