@@ -377,8 +377,8 @@ def extract_coordinates_with_regex(url):
         # user browsed after he chosed the destination.
         # Lets ensure we will not try to parse it.
         # Same for /dir/ locations - it is google maps directions (route).
-        if "/place/" in url or "/dir/":
-            logger.debug("fastrrack: it is a 'places' link, parsing skipped")
+        if url and ("/place/" in url or "/dir/" in url):
+            logger.debug("fastrrack: it is a 'places' or 'dir' link, parsing skipped")
             return None
         # Regex pattern to match latitude and longitude pairs
         pattern = r"(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)"
