@@ -394,7 +394,8 @@ def extract_coordinates_with_regex(url, last_resort=False):
             latitude, longitude = match.groups()
             latitude = latitude.lstrip('+')
             longitude = longitude.lstrip('+')
-            return {"extract_crds: latitude": latitude, "longitude": longitude}
+            logger.debug(f"extract_crds: {latitude}/{longitude}")
+            return {"latitude": latitude, "longitude": longitude}
         else:
             logger.debug("extract_crds: failed to parse cords")
     except Exception as e:
