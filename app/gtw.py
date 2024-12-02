@@ -392,35 +392,6 @@ def extract_coordinates_with_regex(url, last_resort=False):
         if match:
             # Extract latitude and longitude from groups
             latitude, longitude = match.groups()
-            return {"extract_crds: latitude": latitude, "longitude": longitude}
-        else:
-            logger.debug("extract_crds: failed to parse cords")
-    except Exception as e:
-        logger.error(f"Error extracting coordinates: {e}")
-    return None
-
-
-def extract_coordinates_with_regex(url, last_resort=False):
-    try:
-        # Sometimes /places link may contain coordinates of the location, which
-        # user browsed after he chosed the destination.
-        # Lets ensure we will not try to parse it.
-        # Same for /dir/ locations - it is google maps directions (route).
-        if not url:
-            logger.error("extract_crds: no url passed")
-        if not last_resort:
-            if "/place/" in url or "/dir/" in url:
-                logger.debug("extract_crds: it is a 'places' or 'dir' link, parsing skipped")
-                return None
-        if last_resort:
-            logger.info("extract_crds_last_resort: lemme try to find any coords no matter what")
-
-        # Regex pattern to match latitude and longitude pairs
-        pattern = r"([-+]?\d+(?:\.\d+)?),\s*([-+]?\d+(?:\.\d+)?)"
-        match = re.search(pattern, url)
-        if match:
-            # Extract latitude and longitude from groups
-            latitude, longitude = match.groups()
             latitude = latitude.lstrip('+')
             longitude = longitude.lstrip('+')
             return {"extract_crds: latitude": latitude, "longitude": longitude}
