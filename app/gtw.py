@@ -376,11 +376,12 @@ def extract_coordinates_with_regex(url):
         # Sometimes /places link may contain coordinates of the location, which
         # user browsed after he chosed the destination.
         # Lets ensure we will not try to parse it.
-        if "/place/" in url:
+        # Same for /dir/ locations - it is google maps directions (route).
+        if "/place/" in url or "/dir/":
             logger.debug("fastrrack: it is a 'places' link, parsing skipped")
             return None
         # Regex pattern to match latitude and longitude pairs
-        pattern = r".*?(\d\d\.\d\d\d+).*?(\d\d\.\d\d\d+)"
+        pattern = r"(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)"
         match = re.search(pattern, url)
         if match:
             # Extract latitude and longitude from groups
