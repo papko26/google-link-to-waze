@@ -400,11 +400,42 @@ def extract_coordinates_with_regex(url, last_resort=False):
     return None
 
 
+def extract_coordinates_with_regex(url, last_resort=False):
+    try:
+        # Sometimes /places link may contain coordinates of the location, which
+        # user browsed after he chosed the destination.
+        # Lets ensure we will not try to parse it.
+        # Same for /dir/ locations - it is google maps directions (route).
+        if not url:
+            logger.error("extract_crds: no url passed")
+        if not last_resort:
+            if "/place/" in url or "/dir/" in url:
+                logger.debug("extract_crds: it is a 'places' or 'dir' link, parsing skipped")
+                return None
+        if last_resort:
+            logger.info("extract_crds_last_resort: lemme try to find any coords no matter what")
+
+        # Regex pattern to match latitude and longitude pairs
+        pattern = r"([-+]?\d+(?:\.\d+)?),\s*([-+]?\d+(?:\.\d+)?)"
+        match = re.search(pattern, url)
+        if match:
+            # Extract latitude and longitude from groups
+            latitude, longitude = match.groups()
+            latitude = latitude.lstrip('+')
+            longitude = longitude.lstrip('+')
+            return {"extract_crds: latitude": latitude, "longitude": longitude}
+        else:
+            logger.debug("extract_crds: failed to parse cords")
+    except Exception as e:
+        logger.error(f"Error extracting coordinates: {e}")
+    return None
+
+
 def waze_link_from_coords(crds):
     if crds:
         latitude = crds.get("latitude")
         longitude = crds.get("longitude")
-        logger.info(f"Latitude: {latitude}, Longitude: {longitude}")
+        logger.info(f"waze_from_coords: Latitude: {latitude}, Longitude: {longitude}")
         if latitude and longitude:
             return f"https://ul.waze.com/ul?ll={latitude}%2C{longitude}&navigate=yes"
     else:
@@ -416,7 +447,7 @@ def get_wise_link(google_link: str, api_key):
 
     response = requests.head(google_link, allow_redirects=True)
     resolved_url = response.url
-    logger.debug(f"Resolved URL: {resolved_url}")
+    logger.debug(f"get_wise_link: Resolved URL: {resolved_url}")
     crds = extract_coordinates_with_regex(resolved_url)
     if not crds:
         logger.debug("get_wise_link: Trying places API")
