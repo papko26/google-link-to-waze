@@ -381,7 +381,7 @@ def extract_coordinates_with_regex(url):
             logger.debug("fastrrack: it is a 'places' or 'dir' link, parsing skipped")
             return None
         # Regex pattern to match latitude and longitude pairs
-        pattern = r"(-?\+?\d+(\.\d+)?),\s*(-?\+?\d+(\.\d+)?)"
+        pattern = r"([-+]?\d+(?:\.\d+)?),\s*([-+]?\d+(?:\.\d+)?)"
         match = re.search(pattern, url)
         if match:
             # Extract latitude and longitude from groups
