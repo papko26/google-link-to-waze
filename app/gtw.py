@@ -337,6 +337,32 @@ def is_valid_google_url(url: str) -> bool:
 
     return True
 
+def parse_direct_coordinates(encoded_string):
+    # Define the regex pattern for both latitude and longitude
+    pattern = r"(\d+)%C2%B0(\d+)\'(\d+\.\d+)%22([NS])\+(\d+)%C2%B0(\d+)\'(\d+\.\d+)%22([EW])"
+    
+    # Search for matches
+    match = re.search(pattern, encoded_string)
+    if not match:
+        return "No coordinates found in the input string."
+
+    # Extract groups from the match
+    (lat_deg, lat_min, lat_sec, lat_dir,
+     lon_deg, lon_min, lon_sec, lon_dir) = match.groups()
+
+    # Convert latitude to decimal degrees
+    latitude = float(lat_deg) + float(lat_min) / 60 + float(lat_sec) / 3600
+    if lat_dir == 'S':  # South means negative latitude
+        latitude = -latitude
+
+    # Convert longitude to decimal degrees
+    longitude = float(lon_deg) + float(lon_min) / 60 + float(lon_sec) / 3600
+    if lon_dir == 'W':  # West means negative longitude
+        longitude = -longitude
+
+    # Return the parsed coordinates in the desired format
+    return {"latitude": f"{latitude:.6f}", "longitude": f"{longitude:.6f}"}
+
 
 def get_coordinates_from_place_id(place_id, api_key):
     """
@@ -380,6 +406,11 @@ def extract_coordinates_with_regex(url, last_resort=False):
         if not url:
             logger.error("extract_crds: no url passed")
         if not last_resort:
+            if "%C2%B0" in url:
+                logger.info("extract_crds: passed ° symbol. Will try another regex")
+                crds = parse_direct_coordinates(url)
+                if crds:
+                    return crds
             if "/place/" in url or "/dir/" in url:
                 logger.debug("extract_crds: it is a 'places' or 'dir' link, parsing skipped")
                 return None
@@ -387,7 +418,7 @@ def extract_coordinates_with_regex(url, last_resort=False):
             logger.info("extract_crds_last_resort: lemme try to find any coords no matter what")
 
         # Regex pattern to match latitude and longitude pairs
-        pattern = r"([-+]?\d+(?:\.\d+)?),\s*([-+]?\d+(?:\.\d+)?)"
+        pattern = r"([-+]?\d+\.\d+?),\s*([-+]?\d+\.\d+)"
         match = re.search(pattern, url)
         if match:
             # Extract latitude and longitude from groups
