@@ -205,16 +205,23 @@ HTML_TEMPLATE = """
 
     <!-- Contribution Section -->
     <div class="card shadow mt-4">
-        <div class="card-body">
+        <div class="card-body text-center"> <!-- Center align content -->
             <h5 class="card-title">Contribute</h5>
             <p class="card-text">
                 Have ideas to make this better? Check out the project on GitHub and share your suggestions or improvements:
             </p>
             <a href="https://github.com/papko26/google-link-to-waze" target="_blank" class="btn btn-outline-primary">
-                GitHub Repository
+                View Repo
             </a>
         </div>
     </div>
+</div>
+
+<!-- DigitalOcean Badge Section -->
+<div class="container text-center mt-4">
+    <a href="https://www.digitalocean.com/?refcode=6ca39966c289&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge">
+        <img src="https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg" alt="DigitalOcean Referral Badge" />
+    </a>
 </div>
 
 <!-- Spinner Overlay -->
@@ -227,28 +234,28 @@ HTML_TEMPLATE = """
 <!-- Optional: Include Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
-        // Function to show the spinner
-        function showSpinner() {
-            const spinner = document.querySelector('.spinner-overlay');
-            spinner.style.display = 'flex';
+<script>
+    // Function to show the spinner
+    function showSpinner() {
+        const spinner = document.querySelector('.spinner-overlay');
+        spinner.style.display = 'flex';
 
-            // Simulate a redirect check
-            setTimeout(() => {
-                // Redirect condition
-                if (document.readyState === "complete") {
-                    stopSpinnerAndRedirect();
-                }
-            }, 3000);
-        }
+        // Simulate a redirect check
+        setTimeout(() => {
+            // Redirect condition
+            if (document.readyState === "complete") {
+                stopSpinnerAndRedirect();
+            }
+        }, 3000);
+    }
 
-        // Function to stop spinner and redirect to root
-        function stopSpinnerAndRedirect() {
-            const spinner = document.querySelector('.spinner-overlay');
-            spinner.style.display = 'none';
-            window.location.href = '/'; // Redirect to root
-        }
-    </script>
+    // Function to stop spinner and redirect to root
+    function stopSpinnerAndRedirect() {
+        const spinner = document.querySelector('.spinner-overlay');
+        spinner.style.display = 'none';
+        window.location.href = '/'; // Redirect to root
+    }
+</script>
 
 </body>
 </html>
