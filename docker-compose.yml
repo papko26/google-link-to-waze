@@ -31,6 +31,9 @@ services:
         source: /etc/nginx/certs
         target: /etc/letsencrypt
         read_only: true
+      - type: bind
+        source: /var/www/certbot
+        target: /var/www/certbot
     restart: always
 
   certbot:
@@ -43,5 +46,8 @@ services:
       - type: bind
         source: /etc/nginx/certs-data
         target: /var/lib/letsencrypt
+      - type: bind
+        source: /var/www/certbot
+        target: /var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 6h & wait $${!}; certbot renew; done'"
     restart: unless-stopped
