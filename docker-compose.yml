@@ -49,5 +49,16 @@ services:
       - type: bind
         source: /var/www/certbot
         target: /var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 6h & wait $${!}; certbot renew; done'"
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+    entrypoint: >
+      /bin/sh -c '
+        trap exit TERM;
+        while :; do
+          sleep 12h & wait $${!};
+          certbot renew \
+            --webroot -w /var/www/certbot \
+            --deploy-hook "docker kill -s HUP nginx";
+        done'
     restart: unless-stopped
