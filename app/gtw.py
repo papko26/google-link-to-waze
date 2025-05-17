@@ -5,12 +5,12 @@ import argparse
 from sys import exit
 from os import getenv
 from urllib.parse import urlparse
-from flask import Flask, request, render_template_string, redirect
+from flask import Flask, request, render_template_string, redirect, make_response, jsonify
+
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
 
 def get_google_api_key():
     """
@@ -500,6 +500,31 @@ def index():
     # Render the form if no POST data
     return render_template_string(HTML_TEMPLATE)
 
+@app.route("/api/", methods=["POST"])
+def index_api():
+    url = request.form.get("url")
+
+    if not is_valid_google_url(url):
+        logger.error("index: invalid url passed from user")
+        return make_response(jsonify({}), 400)
+
+    if url:
+        logger.debug("index: trying fastrack")
+        fasttrack = extract_coordinates_with_regex(url)
+        if fasttrack:
+            logger.debug("index: fastrack succsess")
+            waze_lnk = waze_link_from_coords(fasttrack)
+            return make_response(jsonify({"waze_lnk": waze_lnk}), 200)
+
+        logger.debug("index: trying default flow")
+        wlink = get_wise_link(url, args.gcp_maps_api_key)
+        if wlink:
+            # Redirect the user to the generated Google Maps link
+            logger.debug("index: default flow succsess")
+            return make_response(jsonify({"waze_lnk": wlink}), 200)
+        else:
+            logger.error("index: failed to provide a wize link")
+            return make_response(jsonify({}), 400)
 
 if __name__ == "__main__":
     args = parse_arguments()
