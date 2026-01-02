@@ -35,30 +35,3 @@ services:
         source: /var/www/certbot
         target: /var/www/certbot
     restart: always
-
-  certbot:
-    image: certbot/certbot
-    container_name: certbot
-    volumes:
-      - type: bind
-        source: /etc/nginx/certs
-        target: /etc/letsencrypt
-      - type: bind
-        source: /etc/nginx/certs-data
-        target: /var/lib/letsencrypt
-      - type: bind
-        source: /var/www/certbot
-        target: /var/www/certbot
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-    entrypoint: >
-      /bin/sh -c '
-        trap exit TERM;
-        while :; do
-          sleep 12h & wait $${!};
-          certbot renew \
-            --webroot -w /var/www/certbot \
-            --deploy-hook "docker kill -s HUP nginx";
-        done'
-    restart: unless-stopped

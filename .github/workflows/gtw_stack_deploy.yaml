@@ -148,3 +148,44 @@ jobs:
           cd ${{ env.DEPLOY_DIR }}
           docker compose pull
           docker compose up -d --force-recreate
+
+    - name: Setup Systemd Timer for Renewal
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ env.SERVER_DOMAIN }}
+        username: root
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cat <<EOF > /etc/systemd/system/certbot-renewal.service
+          [Unit]
+          Description=Certbot Renewal for ${{ env.SERVER_DOMAIN }}
+          After=docker.service
+
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/bin/docker run --rm \
+            -v /etc/nginx/certs:/etc/letsencrypt \
+            -v /var/www/certbot:/var/www/certbot \
+            certbot/certbot renew --webroot -w /var/www/certbot --quiet
+          
+          ExecStartPost=/usr/bin/docker exec nginx nginx -s reload
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
+          cat <<EOF > /etc/systemd/system/certbot-renewal.timer
+          [Unit]
+          Description=Run Certbot renewal twice a day
+
+          [Timer]
+          OnCalendar=*-*-* 00,12:00:00
+          RandomizedDelaySec=1h
+          Persistent=true
+
+          [Install]
+          WantedBy=timers.target
+          EOF
+
+          systemctl daemon-reload
+          systemctl enable --now certbot-renewal.timer
