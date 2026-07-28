@@ -335,12 +335,12 @@ def is_valid_google_url(url: str) -> bool:
         logger.debug(f"{url}:{e}")
         return False
 
-    # Step 3: Check for 'googl' or valid Google domains
-    if "googl" not in url.lower():
-        valid_google_domains = ["maps.app.goo.gl", "google.com", "goo.gl"]
-        if not any(domain in parsed.netloc for domain in valid_google_domains):
-            logger.debug(url)
-            return False
+    # Step 3: Check domain against allowlist
+    valid_google_domains = ["maps.app.goo.gl", "maps.google.com", "www.google.com", "google.com", "goo.gl"]
+    netloc = parsed.netloc.lower()
+    if not any(netloc == d or netloc.endswith("." + d) for d in valid_google_domains):
+        logger.debug(f"url domain not in allowed list: {netloc}")
+        return False
 
     return True
 
@@ -475,30 +475,34 @@ def get_wise_link(google_link: str, api_key):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    url = None
     if request.method == "POST":
         url = request.form.get("url")
-        if not is_valid_google_url(url):
-            logger.error("index: invalid url passed from user")
-            return render_template_string(HTML_WRONG)
-        if url:
-            logger.debug("index: trying fastrack")
-            fasttrack = extract_coordinates_with_regex(url)
-            if fasttrack:
-                logger.debug("index: fastrack succsess")
-                waze_lnk = waze_link_from_coords(fasttrack)
-                return redirect(waze_lnk)
+    elif request.method == "GET":
+        url = request.args.get("url")
 
-            logger.debug("index: trying default flow")
-            wlink = get_wise_link(url, args.gcp_maps_api_key)
-            if wlink:
-                # Redirect the user to the generated Google Maps link
-                logger.debug("index: default flow succsess")
-                return redirect(wlink)
-            else:
-                logger.error("index: failed to provide a wize link")
-                return render_template_string(HTML_BROKEN)
-    # Render the form if no POST data
-    return render_template_string(HTML_TEMPLATE)
+    if not url:
+        return render_template_string(HTML_TEMPLATE)
+
+    if not is_valid_google_url(url):
+        logger.error("index: invalid url passed from user")
+        return render_template_string(HTML_WRONG)
+
+    logger.debug("index: trying fastrack")
+    fasttrack = extract_coordinates_with_regex(url)
+    if fasttrack:
+        logger.debug("index: fastrack succsess")
+        waze_lnk = waze_link_from_coords(fasttrack)
+        return redirect(waze_lnk)
+
+    logger.debug("index: trying default flow")
+    wlink = get_wise_link(url, args.gcp_maps_api_key)
+    if wlink:
+        logger.debug("index: default flow succsess")
+        return redirect(wlink)
+
+    logger.error("index: failed to provide a wize link")
+    return render_template_string(HTML_BROKEN)
 
 
 if __name__ == "__main__":
