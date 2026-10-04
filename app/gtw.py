@@ -4,8 +4,11 @@ import logging
 import argparse
 from sys import exit
 from os import getenv
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs, unquote, unquote_plus, quote
 from flask import Flask, request, render_template_string, redirect
+
+# (connect, read) timeout for every outgoing request
+REQUEST_TIMEOUT = (3, 5)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -267,6 +270,11 @@ def places_api_parse_cid(shitty_link):
         # Regex pattern to match latitude and longitude pairs
         logger.debug("places_api_parse_cid: Now will try resolve it as Google Place")
         logger.debug(shitty_link)
+        # maps.google.com/?cid=<decimal>
+        cid_param = parse_qs(urlparse(shitty_link).query).get("cid")
+        if cid_param and cid_param[0].isdigit():
+            logger.debug(f"cid is: {cid_param[0]}")
+            return int(cid_param[0])
         patterns = [r"ftid.*:(\w+)",r"/data=.*0x(\w+)"]
         for pattern in patterns:
             match = re.search(pattern, shitty_link)
@@ -274,9 +282,8 @@ def places_api_parse_cid(shitty_link):
                 # Extract cid in hex
                 cid_hex = match.groups()[0]
                 logger.debug(f"cid hex is: {cid_hex}")
-                if cid_hex:
-                    cid = hex_to_decimal(cid_hex)
-                    logger.debug(f"cid is: {cid}")
+                cid = hex_to_decimal(cid_hex)
+                logger.debug(f"cid is: {cid}")
                 return cid
     except Exception as e:
         logger.error(f"Error extracting cid: {e}")
@@ -316,7 +323,7 @@ def is_valid_google_url(url: str) -> bool:
             return False
 
         # Step 1: Add 'https://' if no scheme is provided
-        if not urlparse(url).scheme and url.lower().startswith(("http")):
+        if not urlparse(url).scheme:
             url = f"https://{url}"
 
         parsed = urlparse(url)
@@ -344,14 +351,40 @@ def is_valid_google_url(url: str) -> bool:
 
     return True
 
+def normalize_user_input(text):
+    """
+    Users paste whatever their messenger copied: "Place name https://maps.app.goo.gl/xyz",
+    links without scheme, etc. Pick the link out of it and make sure it has a scheme.
+    """
+    if not text:
+        return text
+    text = text.strip()
+    match = re.search(r"https?://\S+", text)
+    if match:
+        return match.group(0)
+    if " " not in text and not urlparse(text).scheme:
+        return f"https://{text}"
+    return text
+
+
+def valid_coords(latitude, longitude):
+    try:
+        lat, lon = float(latitude), float(longitude)
+    except (TypeError, ValueError):
+        return False
+    # 0,0 is what google puts into "@0,0,22z" when it has no idea
+    return -90 <= lat <= 90 and -180 <= lon <= 180 and (lat, lon) != (0, 0)
+
+
 def parse_direct_coordinates(encoded_string):
-    # Define the regex pattern for both latitude and longitude
-    pattern = r"(\d+)%C2%B0(\d+)\'(\d+\.\d+)%22([NS])\+(\d+)%C2%B0(\d+)\'(\d+\.\d+)%22([EW])"
-    
+    # Define the regex pattern for both latitude and longitude, e.g. 34°59'09.4"N 33°54'00.1"E
+    pattern = r"(\d+)°(\d+)'(\d+(?:\.\d+)?)\"([NS])[\s+,]*(\d+)°(\d+)'(\d+(?:\.\d+)?)\"([EW])"
+
     # Search for matches
-    match = re.search(pattern, encoded_string)
+    match = re.search(pattern, unquote(encoded_string))
     if not match:
-        return "No coordinates found in the input string."
+        logger.debug("parse_direct_coordinates: no coordinates found")
+        return None
 
     # Extract groups from the match
     (lat_deg, lat_min, lat_sec, lat_dir,
@@ -382,13 +415,15 @@ def get_coordinates_from_place_id(place_id, api_key):
     Returns:
         dict: A dictionary containing latitude and longitude, or None if failed.
     """
+    if not place_id:
+        return None
     try:
         # API endpoint for Places Details
         url = "https://maps.googleapis.com/maps/api/place/details/json"
         params = {"cid": place_id, "key": api_key}
 
         # Make the API request
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
         response_data = response.json()
 
         # Check the response status
@@ -412,30 +447,39 @@ def extract_coordinates_with_regex(url, last_resort=False):
         # Same for /dir/ locations - it is google maps directions (route).
         if not url:
             logger.error("extract_crds: no url passed")
+            return None
+        # %2C instead of comma, %C2%B0 instead of °, etc.
+        url = unquote(url)
         if not last_resort:
-            if "%C2%B0" in url:
+            if "°" in url:
                 logger.info("extract_crds: passed ° symbol. Will try another regex")
                 crds = parse_direct_coordinates(url)
                 if crds:
                     return crds
+            if "/place/" in url:
+                # The place itself is stored as !3d<lat>!4d<lon> in the data part
+                match = re.search(r"!3d([-+]?\d+\.\d+)!4d([-+]?\d+\.\d+)", url)
+                if match and valid_coords(*match.groups()):
+                    latitude, longitude = match.groups()
+                    logger.debug(f"extract_crds: place coords {latitude}/{longitude}")
+                    return {"latitude": latitude, "longitude": longitude}
             if "/place/" in url or "/dir/" in url:
                 logger.debug("extract_crds: it is a 'places' or 'dir' link, parsing skipped")
                 return None
         if last_resort:
             logger.info("extract_crds_last_resort: lemme try to find any coords no matter what")
 
-        # Regex pattern to match latitude and longitude pairs
-        pattern = r"([-+]?\d+\.\d+?),\s*([-+]?\d+\.\d+)"
-        match = re.search(pattern, url)
-        if match:
+        # Regex pattern to match latitude and longitude pairs, "lat,lon", "lat, lon" or "lat,+lon"
+        pattern = r"([-+]?\d+\.\d+),[\s+]*([-+]?\d+\.\d+)"
+        for match in re.finditer(pattern, url):
             # Extract latitude and longitude from groups
             latitude, longitude = match.groups()
             latitude = latitude.lstrip('+')
             longitude = longitude.lstrip('+')
-            logger.debug(f"extract_crds: {latitude}/{longitude}")
-            return {"latitude": latitude, "longitude": longitude}
-        else:
-            logger.debug("extract_crds: failed to parse cords")
+            if valid_coords(latitude, longitude):
+                logger.debug(f"extract_crds: {latitude}/{longitude}")
+                return {"latitude": latitude, "longitude": longitude}
+        logger.debug("extract_crds: failed to parse cords")
     except Exception as e:
         logger.error(f"Error extracting coordinates: {e}")
     return None
@@ -448,15 +492,54 @@ def waze_link_from_coords(crds):
         logger.info(f"waze_from_coords: Latitude: {latitude}, Longitude: {longitude}")
         if latitude and longitude:
             return f"https://ul.waze.com/ul?ll={latitude}%2C{longitude}&navigate=yes"
-    else:
+    return None
+
+
+def search_query_from_url(url):
+    """
+    Last resort when google gives us no coordinates (plus codes, plain addresses,
+    places unknown to Places API): take the human readable name out of the link.
+    """
+    parsed = urlparse(url)
+    params = parse_qs(parsed.query)
+    for key in ("q", "query"):
+        if params.get(key):
+            return params[key][0]
+    match = re.search(r"/maps/(?:place|search)/([^/]+)", parsed.path)
+    if match:
+        return unquote_plus(match.group(1))
+    return None
+
+
+def waze_link_from_query(query):
+    if not query:
         return None
+    logger.info(f"waze_from_query: {query}")
+    # No navigate=yes here: let the user pick the right search result in Waze
+    return f"https://ul.waze.com/ul?q={quote(query)}"
+
+
+def resolve_url(url, max_hops=5):
+    """
+    Follow redirects of shortened links manually, so we never leave google domains.
+    """
+    for _ in range(max_hops):
+        response = requests.head(url, allow_redirects=False, timeout=REQUEST_TIMEOUT)
+        location = response.headers.get("Location")
+        if not response.is_redirect or not location:
+            return url
+        url = requests.compat.urljoin(url, location)
+        if not is_valid_google_url(url):
+            logger.error(f"resolve_url: redirected outside of google: {url}")
+            return None
+    return url
 
 
 def get_wise_link(google_link: str, api_key):
     # Resolve the shortened URL
-
-    response = requests.head(google_link, allow_redirects=True)
-    resolved_url = response.url
+    resolved_url = resolve_url(google_link)
+    if not resolved_url:
+        return None
     logger.debug(f"get_wise_link: Resolved URL: {resolved_url}")
     crds = extract_coordinates_with_regex(resolved_url)
     if not crds:
@@ -466,6 +549,10 @@ def get_wise_link(google_link: str, api_key):
     if not crds:
         crds = extract_coordinates_with_regex(resolved_url, last_resort=True)
     if not crds:
+        waze_search = waze_link_from_query(search_query_from_url(resolved_url))
+        if waze_search:
+            logger.info("get_wise_link: no coordinates, falling back to Waze search")
+            return waze_search
         logger.error("get_wise_link: Every attempt to get coordinates failed")
         return None
 
@@ -484,7 +571,16 @@ def index():
     if not url:
         return render_template_string(HTML_TEMPLATE)
 
+    user_input = url
+    url = normalize_user_input(url)
     if not is_valid_google_url(url):
+        # Not a link, but maybe plain coordinates copied from google maps
+        crds = None
+        if "/" not in user_input:
+            crds = parse_direct_coordinates(user_input) or extract_coordinates_with_regex(user_input, last_resort=True)
+        if crds:
+            logger.debug("index: plain coordinates passed")
+            return redirect(waze_link_from_coords(crds))
         logger.error("index: invalid url passed from user")
         return render_template_string(HTML_WRONG)
 
