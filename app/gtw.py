@@ -162,6 +162,61 @@ HTML_BROKEN = """
 </html>
 """
 
+HTML_SHARE_GOOGLE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>share.google Links Are Not Supported</title>
+    <link rel="icon" href="https://cdnjs.cloudflare.com/ajax/libs/emojione/2.2.7/assets/png/1f30d.png" type="image/png">
+    <!-- Include Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #333;
+        }
+        .card {
+            max-width: 600px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-outline-primary {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card bg-white text-center">
+        <h1 class="text-warning">Sorry, share.google Links Are Not Supported</h1>
+        <p class="lead">
+            Google does not let us handle share.google links properly: they hide the location
+            behind a page that only works in a browser, so there is nothing we can send to Waze.
+        </p>
+        <p>
+            Open the link in Google Maps, tap <strong>Share</strong> and copy the link from there
+            (it starts with maps.app.goo.gl). That one will work.
+        </p>
+        <a href="/" class="btn btn-outline-primary">
+            Return to Main Page
+        </a>
+    </div>
+
+    <!-- Optional: Include Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+"""
+
 # HTML Template
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -365,6 +420,13 @@ def normalize_user_input(text):
     if " " not in text and not urlparse(text).scheme:
         return f"https://{text}"
     return text
+
+
+def is_share_google_link(url):
+    # share.google/<id> resolves to www.google.com/share.google?q=<id>, a JS-only page without coordinates
+    parsed = urlparse(url)
+    netloc = parsed.netloc.lower()
+    return netloc in ("share.google", "www.share.google") or parsed.path.startswith("/share.google")
 
 
 def valid_coords(latitude, longitude):
@@ -573,6 +635,10 @@ def index():
 
     user_input = url
     url = normalize_user_input(url)
+    if is_share_google_link(url):
+        logger.info("index: share.google link passed, not supported")
+        return render_template_string(HTML_SHARE_GOOGLE)
+
     if not is_valid_google_url(url):
         # Not a link, but maybe plain coordinates copied from google maps
         crds = None
