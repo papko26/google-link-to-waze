@@ -48,6 +48,18 @@ Same as for Wazers - feel free to reach me you have any concerns.
 
 ---
 
+## Tests
+
+```bash
+pip install -r app/requirements.txt -r tests/requirements.txt
+pytest -m "not smoke"                                     # offline, no network
+GTW_BASE_URL=https://waze.papko.org pytest -m smoke       # end-to-end against a running instance
+```
+
+CI runs the offline tests on every pull request and before each deploy, and the smoke tests against waze.papko.org right after the deploy.
+
+---
+
 ## How to Contribute
 
 Contributions, ideas, and constructive criticism are always welcome! Head over to the [GitHub repository](https://github.com/papko26/google-link-to-waze) and feel free to submit a pull request or file an issue.

@@ -3,4 +3,5 @@
 /scratches
 *.scratch
 .DS_Store
-*.log
+*.log__pycache__/
+.pytest_cache/
