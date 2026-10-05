@@ -223,6 +223,10 @@ def test_index_falls_back_to_waze_search(client, fake_net):
 def test_index_broken_when_nothing_found(client, fake_net):
     r = get(client, "https://www.google.com/maps/place//@0,0,22z")
     assert r.status_code == 200 and b"Oops, Something Went Wrong!" in r.data
+    # nobody gets notified automatically, the page must ask the user to report
+    assert b"https://github.com/papko26/google-link-to-waze/issues/new" in r.data
+    assert b"https://t.me/papko26" in r.data
+    assert b"let the team know" not in r.data
 
 
 @pytest.mark.parametrize("text, location", [

@@ -144,12 +144,19 @@ HTML_BROKEN = """
     <div class="card bg-white text-center">
         <h1 class="text-danger">Oops, Something Went Wrong!</h1>
         <p class="lead">
-            It seems Google has changed something again, and things are broken. 
-            Don’t worry, <strong>I'll let the team know</strong> to fix it as soon as possible.
+            We couldn't find a location in this link. Maybe Google has changed something again,
+            or this kind of link is not supported yet.
         </p>
-        <p>If you have any ideas to improve this, you're welcome to contribute:</p>
-        <a href="https://github.com/papko26/google-link-to-waze" target="_blank" class="btn btn-outline-primary">
-            Visit the GitHub Repository
+        <p>
+            Please help us fix it: open an issue on GitHub and paste the link you used.
+            If you don't know how to do that, just send the link to
+            <a href="https://t.me/papko26" target="_blank">@papko26</a> on Telegram.
+        </p>
+        <a href="https://github.com/papko26/google-link-to-waze/issues/new" target="_blank" class="btn btn-outline-primary">
+            Open an Issue on GitHub
+        </a>
+        <a href="https://t.me/papko26" target="_blank" class="btn btn-outline-primary">
+            Message on Telegram
         </a>
         <a href="/" class="btn btn-outline-secondary">
             Return to Main Page
