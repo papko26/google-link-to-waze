@@ -364,7 +364,7 @@ def hex_to_decimal(hex_string):
 def is_valid_google_url(url: str) -> bool:
     """
     Validates the given URL based on the following criteria:
-    1. Check if the URL length does not exceed 512 characters.
+    1. Check if the URL length does not exceed 2048 characters.
     2. Add 'https://' if no scheme is provided.
     3. Validate the URL format.
     4. Check if the URL contains 'googl' (case-insensitive) or matches known Google domains.
@@ -380,7 +380,7 @@ def is_valid_google_url(url: str) -> bool:
         return False
     try: 
         # Step 0: Check length
-        if len(url) > 512:
+        if len(url) > 2048:
             logger.debug(f"url is too long: {url}")
             return False
 
