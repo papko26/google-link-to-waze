@@ -25,34 +25,35 @@ TITLES = {
 
 # (input, expected): "ll:<lat prefix>,<lon prefix>" | "q" | "share" | "wrong" | "broken"
 CASES = [
-    # issue #5 and other failures from production logs
-    ("https://www.google.com/maps/search/?api=1&query=-22.795714194709404%2C-46.33673284202814", "ll:-22.7957,-46.3367"),
-    ("https://www.google.com/maps/search/-16.604401,+-49.214156?entry=tts", "ll:-16.6044,-49.2141"),
+    # link formats
+    ("https://www.google.com/maps/search/?api=1&query=-12.345678912345678%2C-45.67891234567891", "ll:-12.3456,-45.6789"),
+    ("https://www.google.com/maps/search/-11.111111,+-22.222222?entry=tts", "ll:-11.1111,-22.2222"),
     ("https://www.google.com/maps/search/34%C2%B0N", "q"),
-    ("34°59'09.4\"N 33°54'00.1\"E", "ll:34.9859,33.9000"),
-    ("34.98, 33.95", "ll:34.98,33.95"),
-    ("google.com/maps?q=34.98,33.95&entry=gps", "ll:34.98,33.95"),
-    ("Lietuva · Saulius https://maps.app.goo.gl/Crj1o13NznuE5fZn8?g_st=iw", "ll:60.347,5.29"),
-    ("https://maps.google.com/maps?q=4VFV+586+Archagas+House,+C.+Piedra+Ancha&ftid=0x8f6fa564b2b9b215:0x3847536924ebaa87", "q"),
+    ("10°10'10.0\"N 20°20'20.0\"E", "ll:10.1694,20.3388"),
+    ("10.12, 20.34", "ll:10.12,20.34"),
+    ("google.com/maps?q=10.12,20.34&entry=gps", "ll:10.12,20.34"),
+    ("Example Cafe · Someone https://maps.app.goo.gl/rh9XcEKq1bc5G3nS9?g_st=it", "ll:41.890,12.492"),
+    ("https://maps.google.com/maps?q=9C3X+2W+Example+House,+Example+St&ftid=0x1111111111111111:0x2222222222222222", "q"),
     ("https://www.google.com/maps/place//@0,0,22z?utm_campaign=ml-ardl", "broken"),
     # Places API
     ("https://www.google.com/maps/place/Eiffel+Tower/data=!4m2!3m1!1s0x47e66e2964e34e2d:0x8ddca9ee380ef7e0", "ll:48.858,2.294"),
     ("https://maps.google.com/?cid=10222232094831998944", "ll:48.858,2.294"),
-    ("https://maps.app.goo.gl/91jma2zHp9mWgG6M6", "ll:45.54,11.57"),
-    ("https://maps.app.goo.gl/5A5xc4qnSdL8DcVp6", "ll:41.90,12.45"),
+    ("https://maps.app.goo.gl/rh9XcEKq1bc5G3nS9?g_st=it", "ll:41.890,12.492"),
+    # route, the destination is used; the redirect is longer than 512 characters
+    ("https://maps.app.goo.gl/5EPDonpF1VgktnWx9?g_st=it", "ll:41.890,12.492"),
     # regular links
-    ("https://maps.app.goo.gl/5a2iNmeLGDpY9gc36", "ll:-6.6398,106.774"),
-    ("maps.app.goo.gl/Crj1o13NznuE5fZn8", "ll:60.347,5.29"),
-    ("https://www.google.com/maps/@34.9876,33.9001,15z", "ll:34.9876,33.9001"),
+    ("https://maps.app.goo.gl/WfN845QbZ6LzPPv79?g_st=it", "ll:34.9799,33.9446"),
+    ("maps.app.goo.gl/WfN845QbZ6LzPPv79", "ll:34.9799,33.9446"),
+    ("https://www.google.com/maps/@10.1234,20.5678,15z", "ll:10.1234,20.5678"),
     # share.google
-    ("https://share.google/6qgJzt7fxpp8bzbNZ", "share"),
-    ("share.google/6qgJzt7fxpp8bzbNZ", "share"),
-    ("Cafe https://share.google/6qgJzt7fxpp8bzbNZ", "share"),
+    ("https://share.google/XyZ12abCDef34GhIj", "share"),
+    ("share.google/XyZ12abCDef34GhIj", "share"),
+    ("Cafe https://share.google/XyZ12abCDef34GhIj", "share"),
     # rejects
     ("https://evil.com/maps/@34.1,33.1", "wrong"),
     ("http://localhost:5000/", "wrong"),
     ("http://169.254.169.254/latest/meta-data", "wrong"),
-    ("Kai Garden Residences by DMCI Homes, Mandaluyong City", "wrong"),
+    ("Example Residences by Example Homes, Example City", "wrong"),
 ]
 
 

@@ -56,17 +56,17 @@ def waze_ll(lat, lon):
 
 @pytest.mark.parametrize("url, expected", [
     # issue #5: url-encoded comma
-    ("https://www.google.com/maps/search/?api=1&query=-22.795714194709404%2C-46.33673284202814",
-     ("-22.795714194709404", "-46.33673284202814")),
+    ("https://www.google.com/maps/search/?api=1&query=-12.345678912345678%2C-45.67891234567891",
+     ("-12.345678912345678", "-45.67891234567891")),
     # "+-" before negative longitude
-    ("https://www.google.com/maps/search/-16.604401,+-49.214156?entry=tts", ("-16.604401", "-49.214156")),
-    ("https://www.google.com/maps/@34.9876,33.9001,15z", ("34.9876", "33.9001")),
-    ("https://www.google.com/maps?q=34.98, 33.95", ("34.98", "33.95")),
+    ("https://www.google.com/maps/search/-11.111111,+-22.222222?entry=tts", ("-11.111111", "-22.222222")),
+    ("https://www.google.com/maps/@10.1234,20.5678,15z", ("10.1234", "20.5678")),
+    ("https://www.google.com/maps?q=10.12, 20.34", ("10.12", "20.34")),
     # place: real coordinates from !3d!4d, not the "@" viewport
-    ("https://www.google.com/maps/place/X/@60.3476523,5.2912732,17z/data=!3m1!4b1!4m6!3m5!1s0x1:0x2!8m2!3d60.3476523!4d5.2938481",
-     ("60.3476523", "5.2938481")),
+    ("https://www.google.com/maps/place/X/@50.1234567,8.1234567,17z/data=!3m1!4b1!4m6!3m5!1s0x1:0x2!8m2!3d50.1234567!4d8.1239876",
+     ("50.1234567", "8.1239876")),
     # DMS, encoded and not
-    ("https://www.google.com/maps/place/34%C2%B059'09.4%22N+33%C2%B054'00.1%22E", ("34.985944", "33.900028")),
+    ("https://www.google.com/maps/place/10%C2%B010'10.0%22N+20%C2%B020'20.0%22E", ("10.169444", "20.338889")),
 ])
 def test_extract_coordinates(url, expected):
     crds = gtw.extract_coordinates_with_regex(url)
@@ -91,8 +91,8 @@ def test_extract_coordinates_last_resort_skips_invalid_pairs():
 
 
 @pytest.mark.parametrize("text, expected", [
-    ("34°59'09.4\"N 33°54'00.1\"E", {"latitude": "34.985944", "longitude": "33.900028"}),
-    ("22°47'44.6\"S+46°20'12.2\"W", {"latitude": "-22.795722", "longitude": "-46.336722"}),
+    ("10°10'10.0\"N 20°20'20.0\"E", {"latitude": "10.169444", "longitude": "20.338889"}),
+    ("12°20'44.4\"S+45°40'44.5\"W", {"latitude": "-12.345667", "longitude": "-45.679028"}),
     ("no coordinates here", None),
 ])
 def test_parse_direct_coordinates(text, expected):
@@ -102,11 +102,11 @@ def test_parse_direct_coordinates(text, expected):
 # --- input handling ---
 
 @pytest.mark.parametrize("text, expected", [
-    ("Lietuva · Saulius https://maps.app.goo.gl/TGCQZrmEsCmByhtcN?g_st=iw",
-     "https://maps.app.goo.gl/TGCQZrmEsCmByhtcN?g_st=iw"),
+    ("Example Cafe · Someone https://maps.app.goo.gl/AbCdEfGhIjKlMnOpQ?g_st=iw",
+     "https://maps.app.goo.gl/AbCdEfGhIjKlMnOpQ?g_st=iw"),
     ("  maps.app.goo.gl/abc  ", "https://maps.app.goo.gl/abc"),
     ("https://maps.app.goo.gl/abc", "https://maps.app.goo.gl/abc"),
-    ("Kai Garden Residences, Mandaluyong City", "Kai Garden Residences, Mandaluyong City"),
+    ("Example Residences, Example City", "Example Residences, Example City"),
 ])
 def test_normalize_user_input(text, expected):
     assert gtw.normalize_user_input(text) == expected
@@ -116,7 +116,7 @@ def test_normalize_user_input(text, expected):
     ("https://maps.app.goo.gl/abc", True),
     ("https://www.google.com/maps/@34.1,33.1,15z", True),
     ("https://maps.google.com/?cid=1", True),
-    ("google.com/maps?q=34.98,33.95", True),
+    ("google.com/maps?q=10.12,20.34", True),
     ("https://consent.google.com/x", True),
     ("https://evil.com/maps/@34.1,33.1", False),
     ("https://google.com.evil.com/", False),
@@ -131,9 +131,9 @@ def test_is_valid_google_url(url, valid):
 
 
 @pytest.mark.parametrize("url, expected", [
-    ("https://share.google/6qgJzt7fxpp8bzbNZ", True),
+    ("https://share.google/XyZ12abCDef34GhIj", True),
     ("https://SHARE.GOOGLE/abc", True),
-    ("https://www.google.com/share.google?q=6qgJzt7fxpp8bzbNZ", True),
+    ("https://www.google.com/share.google?q=XyZ12abCDef34GhIj", True),
     ("https://maps.app.goo.gl/abc", False),
 ])
 def test_is_share_google_link(url, expected):
@@ -141,8 +141,8 @@ def test_is_share_google_link(url, expected):
 
 
 @pytest.mark.parametrize("url, expected", [
-    ("https://maps.google.com/maps?cid=10222232094831998944", 10222232094831998944),
-    ("https://maps.google.com/maps?q=X&ftid=0x8f6fa564b2b9b215:0x3847536924ebaa87", 0x3847536924ebaa87),
+    ("https://maps.google.com/maps?cid=12345678901234567890", 12345678901234567890),
+    ("https://maps.google.com/maps?q=X&ftid=0x1111111111111111:0x2222222222222222", 0x2222222222222222),
     ("https://www.google.com/maps/place/X/data=!4m2!3m1!1s0x47e66e2964e34e2d:0x8ddca9ee380ef7e0", 0x8ddca9ee380ef7e0),
     ("https://www.google.com/maps/search/foo", None),
 ])
@@ -151,9 +151,9 @@ def test_places_api_parse_cid(url, expected):
 
 
 @pytest.mark.parametrize("url, expected", [
-    ("https://maps.google.com/maps?q=4VFV+586+Archagas+House,+C.+Piedra+Ancha&ftid=0x1:0x2",
-     "4VFV 586 Archagas House, C. Piedra Ancha"),
-    ("https://www.google.com/search?q=entrance+1+dubai+hills+mall&ie=UTF-8", "entrance 1 dubai hills mall"),
+    ("https://maps.google.com/maps?q=9C3X+2W+Example+House,+Example+St&ftid=0x1:0x2",
+     "9C3X 2W Example House, Example St"),
+    ("https://www.google.com/search?q=entrance+1+example+mall&ie=UTF-8", "entrance 1 example mall"),
     ("https://www.google.com/maps/place/%D0%B2%D1%83%D0%BB%D0%B8%D1%86%D1%8F+7/data=!4m2", "вулиця 7"),
     ("https://www.google.com/maps/place//@0,0,22z", None),
 ])
@@ -195,10 +195,10 @@ def test_index_form(client):
 def test_index_issue_5_short_link(client, fake_net):
     redirects, _, calls = fake_net
     redirects["https://maps.app.goo.gl/pin"] = (
-        "https://www.google.com/maps/search/?api=1&query=-22.795714194709404%2C-46.33673284202814")
+        "https://www.google.com/maps/search/?api=1&query=-12.345678912345678%2C-45.67891234567891")
     r = get(client, "https://maps.app.goo.gl/pin")
     assert r.status_code == 302
-    assert r.location == waze_ll("-22.795714194709404", "-46.33673284202814")
+    assert r.location == waze_ll("-12.345678912345678", "-45.67891234567891")
     assert calls["places"] == []
 
 
@@ -227,10 +227,10 @@ def test_index_place_via_places_api(client, fake_net):
 def test_index_falls_back_to_waze_search(client, fake_net):
     redirects, _, _ = fake_net
     redirects["https://maps.app.goo.gl/plus"] = (
-        "https://maps.google.com/maps?q=4VFV+586+Archagas+House&ftid=0x8f6fa564b2b9b215:0x3847536924ebaa87")
+        "https://maps.google.com/maps?q=9C3X+2W+Example+House&ftid=0x1111111111111111:0x2222222222222222")
     r = get(client, "https://maps.app.goo.gl/plus")
     assert r.status_code == 302
-    assert r.location == "https://ul.waze.com/ul?q=4VFV%20586%20Archagas%20House"
+    assert r.location == "https://ul.waze.com/ul?q=9C3X%202W%20Example%20House"
 
 
 def test_index_broken_when_nothing_found(client, fake_net):
@@ -243,8 +243,8 @@ def test_index_broken_when_nothing_found(client, fake_net):
 
 
 @pytest.mark.parametrize("text, location", [
-    ("34°59'09.4\"N 33°54'00.1\"E", waze_ll("34.985944", "33.900028")),
-    ("34.98, 33.95", waze_ll("34.98", "33.95")),
+    ("10°10'10.0\"N 20°20'20.0\"E", waze_ll("10.169444", "20.338889")),
+    ("10.12, 20.34", waze_ll("10.12", "20.34")),
 ])
 def test_index_plain_coordinates(client, fake_net, text, location):
     r = get(client, text)
@@ -262,7 +262,7 @@ def test_index_share_google(client, fake_net, url):
 @pytest.mark.parametrize("url", [
     "https://evil.com/maps/@34.1,33.1",
     "http://localhost:5000/",
-    "Kai Garden Residences by DMCI Homes, Mandaluyong City",
+    "Example Residences by Example Homes, Example City",
 ])
 def test_index_rejects(client, fake_net, url):
     r = get(client, url)
