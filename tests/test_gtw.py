@@ -123,7 +123,7 @@ def test_normalize_user_input(text, expected):
     ("https://evilgoogle.com/", False),
     ("http://localhost:5000/", False),
     ("http://169.254.169.254/latest/meta-data", False),
-    ("https://maps.app.goo.gl/" + "a" * 600, False),
+    ("https://maps.app.goo.gl/" + "a" * 2100, False),
     ("", False),
 ])
 def test_is_valid_google_url(url, valid):
@@ -200,6 +200,19 @@ def test_index_issue_5_short_link(client, fake_net):
     assert r.status_code == 302
     assert r.location == waze_ll("-22.795714194709404", "-46.33673284202814")
     assert calls["places"] == []
+
+
+def test_index_long_redirect_from_mobile_app(client, fake_net):
+    # links shared from the mobile app carry a long g_ep and used to fail the 512 length limit
+    redirects, _, _ = fake_net
+    long_url = (
+        "https://www.google.com/maps/place/Some+Place,+Example+City/data=!4m6!3m5"
+        "!1s0x0:0x1234567890abcdef!7e2!8m2!3d12.345678!4d98.7654321!18m1!1e1"
+        "?utm_source=mstt_1&entry=gps&g_ep=" + "A" * 400 + "&skid=00000000-0000-0000-0000-000000000000")
+    assert len(long_url) > 512
+    redirects["https://maps.app.goo.gl/long"] = long_url
+    r = client.post("/", data={"url": "https://maps.app.goo.gl/long"})
+    assert r.status_code == 302 and r.location == waze_ll("12.345678", "98.7654321")
 
 
 def test_index_place_via_places_api(client, fake_net):
