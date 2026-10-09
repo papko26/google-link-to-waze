@@ -2,6 +2,9 @@
 Offline tests: no network, requests.head/get are faked.
 Most inputs are real links that failed in production logs.
 """
+import base64
+import struct
+
 import pytest
 
 import gtw
@@ -50,6 +53,20 @@ def fake_net(monkeypatch):
 
 def waze_ll(lat, lon):
     return f"https://ul.waze.com/ul?ll={lat}%2C{lon}&navigate=yes"
+
+
+def geocode_point(lat, lon, ftid=None):
+    # same encoding google uses in the geocode= param of route links
+    data = struct.pack("<BiBi", 0x15, round(lat * 1e6), 0x1d, round(lon * 1e6))
+    if ftid:
+        data += struct.pack("<BQBQ", 0x29, ftid[0], 0x31, ftid[1])
+    return base64.urlsafe_b64encode(data).decode()
+
+
+START = (12.345678, 98.765432)
+START_GEOCODE = geocode_point(*START)
+DEST_GEOCODE = geocode_point(23.456789, 87.654321, (0x1111111111111111, 0x2222222222222222))
+ROUTE_TAIL = "&dirflg=d&lucs=,1,2,3&g_ep=" + "A" * 200 + "&skid=00000000-0000-0000-0000-000000000000&g_st=ic"
 
 
 # --- coordinates parsing ---
@@ -268,3 +285,68 @@ def test_index_rejects(client, fake_net, url):
     r = get(client, url)
     assert r.status_code == 200 and b"Not a Google Maps Link!" in r.data
     assert fake_net[2]["head"] == []
+
+
+# --- routes shared from the app: saddr is where the user is, never navigate there ---
+
+def test_extract_coordinates_skips_route_start():
+    url = f"https://maps.google.com/maps?saddr={START[0]},{START[1]}&daddr=Some+Place" + ROUTE_TAIL
+    assert gtw.extract_coordinates_with_regex(url) is None
+
+
+@pytest.mark.parametrize("point, expected", [
+    (DEST_GEOCODE, {"latitude": "23.456789", "longitude": "87.654321"}),
+    (geocode_point(-12.5, -45.25), {"latitude": "-12.500000", "longitude": "-45.250000"}),
+    ("not-base64!", None),
+    (geocode_point(0, 0), None),
+])
+def test_decode_geocode_point(point, expected):
+    assert gtw.decode_geocode_point(point) == expected
+
+
+def test_index_route_goes_to_destination_from_geocode(client, fake_net):
+    redirects, _, calls = fake_net
+    redirects["https://maps.app.goo.gl/route?g_st=ic"] = (
+        f"https://maps.google.com/?geocode={START_GEOCODE};{DEST_GEOCODE}"
+        f"&daddr=Some+Place,+Example+St+1,+Example+City&saddr={START[0]},{START[1]}"
+        "&ftid=0x1111111111111111:0x2222222222222222" + ROUTE_TAIL)
+    r = client.post("/", data={"url": "https://maps.app.goo.gl/route?g_st=ic"})
+    assert r.status_code == 302 and r.location == waze_ll("23.456789", "87.654321")
+    assert calls["places"] == []
+
+
+def test_index_route_destination_via_places_api(client, fake_net):
+    redirects, places, _ = fake_net
+    redirects["https://maps.app.goo.gl/route"] = (
+        f"https://maps.google.com/maps?daddr=Some+Place&saddr={START[0]},{START[1]}"
+        "&ftid=0x1111111111111111:0x2222222222222222" + ROUTE_TAIL)
+    places[0x2222222222222222] = (23.4, 87.6)
+    r = get(client, "https://maps.app.goo.gl/route")
+    assert r.status_code == 302 and r.location == waze_ll("23.4", "87.6")
+
+
+@pytest.mark.parametrize("daddr, location", [
+    ("23.456789,87.654321", waze_ll("23.456789", "87.654321")),
+    ("Stop+A+to:Some+Place", "https://ul.waze.com/ul?q=Some%20Place"),
+])
+def test_index_route_destination_from_daddr(client, fake_net, daddr, location):
+    redirects, _, _ = fake_net
+    redirects["https://maps.app.goo.gl/route"] = (
+        f"https://maps.google.com/maps?saddr={START[0]},{START[1]}&daddr={daddr}" + ROUTE_TAIL)
+    r = get(client, "https://maps.app.goo.gl/route")
+    assert r.status_code == 302 and r.location == location
+
+
+def test_index_route_pasted_directly(client, fake_net):
+    url = f"https://maps.google.com/maps?saddr={START[0]},{START[1]}&daddr=23.456789,87.654321"
+    r = get(client, url)
+    assert r.status_code == 302 and r.location == waze_ll("23.456789", "87.654321")
+
+
+def test_index_route_without_destination(client, fake_net):
+    redirects, _, calls = fake_net
+    redirects["https://maps.app.goo.gl/route?g_st=ic"] = (
+        f"https://maps.google.com/?dirflg=d&saddr={START[0]},{START[1]}&geocode={START_GEOCODE}" + ROUTE_TAIL)
+    r = client.post("/", data={"url": "https://maps.app.goo.gl/route?g_st=ic"})
+    assert r.status_code == 200 and b"This Route Has No Destination" in r.data
+    assert calls["places"] == []
