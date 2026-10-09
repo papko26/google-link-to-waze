@@ -1,5 +1,7 @@
 import requests
 import re
+import base64
+import struct
 import logging
 import argparse
 from sys import exit
@@ -212,6 +214,61 @@ HTML_SHARE_GOOGLE = """
         <p>
             Open the link in Google Maps, tap <strong>Share</strong> and copy the link from there
             (it starts with maps.app.goo.gl). That one will work.
+        </p>
+        <a href="/" class="btn btn-outline-primary">
+            Return to Main Page
+        </a>
+    </div>
+
+    <!-- Optional: Include Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+"""
+
+HTML_ROUTE_NO_DESTINATION = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>This Route Has No Destination</title>
+    <link rel="icon" href="https://cdnjs.cloudflare.com/ajax/libs/emojione/2.2.7/assets/png/1f30d.png" type="image/png">
+    <!-- Include Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #333;
+        }
+        .card {
+            max-width: 600px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-outline-primary {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card bg-white text-center">
+        <h1 class="text-warning">This Route Has No Destination</h1>
+        <p class="lead">
+            You shared a route, but Google put only the starting point into the link,
+            so there is nowhere to send Waze.
+        </p>
+        <p>
+            Open the destination itself in Google Maps (the place or the dropped pin, not the route),
+            tap <strong>Share</strong> and paste that link here.
         </p>
         <a href="/" class="btn btn-outline-primary">
             Return to Main Page
@@ -535,6 +592,9 @@ def extract_coordinates_with_regex(url, last_resort=False):
             if "/place/" in url or "/dir/" in url:
                 logger.debug("extract_crds: it is a 'places' or 'dir' link, parsing skipped")
                 return None
+            if is_route_url(url):
+                logger.debug("extract_crds: it is a route link, parsing skipped")
+                return None
         if last_resort:
             logger.info("extract_crds_last_resort: lemme try to find any coords no matter what")
 
@@ -588,6 +648,69 @@ def waze_link_from_query(query):
     return f"https://ul.waze.com/ul?q={quote(query)}"
 
 
+class RouteWithoutDestination(Exception):
+    pass
+
+
+def is_route_url(url):
+    params = parse_qs(urlparse(url).query)
+    return "saddr" in params or "daddr" in params
+
+
+def decode_geocode_point(point):
+    """
+    One point of the geocode= param of route links: base64 protobuf with
+    field 2 = lat * 1e6 and field 3 = lon * 1e6 (fixed32), places also carry ftid (fixed64).
+    """
+    try:
+        data = base64.urlsafe_b64decode(point + "=" * (-len(point) % 4))
+        fields, i = {}, 0
+        while i < len(data):
+            field, wire_type = data[i] >> 3, data[i] & 7
+            i += 1
+            if wire_type == 5:
+                fields[field] = struct.unpack("<i", data[i:i + 4])[0]
+                i += 4
+            elif wire_type == 1:
+                i += 8
+            else:
+                break
+        latitude, longitude = fields[2] / 1e6, fields[3] / 1e6
+    except Exception as e:
+        logger.debug(f"decode_geocode_point: {point}: {e}")
+        return None
+    if not valid_coords(latitude, longitude):
+        return None
+    return {"latitude": f"{latitude:.6f}", "longitude": f"{longitude:.6f}"}
+
+
+def route_destination(url, api_key):
+    """
+    Routes shared from the app look like maps?saddr=<start>&daddr=<destination>&geocode=<start>;<destination>&ftid=...
+    saddr is usually where the user is right now, so never navigate there: use the last stop of the route.
+    """
+    params = parse_qs(urlparse(url).query)
+    daddr = params.get("daddr", [""])[0]
+    if not daddr:
+        logger.error("route_destination: route without destination")
+        raise RouteWithoutDestination()
+    # multi-stop routes: "A to:B to:C"
+    daddr = daddr.split(" to:")[-1]
+    crds = extract_coordinates_with_regex(daddr, last_resort=True)
+    if not crds:
+        # geocode has a point per stop, the start goes first
+        points = params.get("geocode", [""])[0].split(";")
+        if len(points) > 1:
+            crds = decode_geocode_point(points[-1])
+    if not crds:
+        logger.debug("route_destination: Trying places API")
+        crds = get_coordinates_from_place_id(places_api_parse_cid(url), api_key)
+    if crds:
+        return waze_link_from_coords(crds)
+    logger.info("route_destination: no coordinates, falling back to Waze search")
+    return waze_link_from_query(daddr)
+
+
 def resolve_url(url, max_hops=5):
     """
     Follow redirects of shortened links manually, so we never leave google domains.
@@ -610,6 +733,8 @@ def get_wise_link(google_link: str, api_key):
     if not resolved_url:
         return None
     logger.debug(f"get_wise_link: Resolved URL: {resolved_url}")
+    if is_route_url(resolved_url):
+        return route_destination(resolved_url, api_key)
     crds = extract_coordinates_with_regex(resolved_url)
     if not crds:
         logger.debug("get_wise_link: Trying places API")
@@ -665,7 +790,10 @@ def index():
         return redirect(waze_lnk)
 
     logger.debug("index: trying default flow")
-    wlink = get_wise_link(url, args.gcp_maps_api_key)
+    try:
+        wlink = get_wise_link(url, args.gcp_maps_api_key)
+    except RouteWithoutDestination:
+        return render_template_string(HTML_ROUTE_NO_DESTINATION)
     if wlink:
         logger.debug("index: default flow succsess")
         return redirect(wlink)
