@@ -339,11 +339,12 @@ HTML_TEMPLATE = """
     </div>
 </div>
 
-<!-- DigitalOcean Badge Section -->
-<div class="container text-center mt-4">
-    <a href="https://www.digitalocean.com/?refcode=6ca39966c289&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge">
-        <img src="https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg" alt="DigitalOcean Referral Badge" />
-    </a>
+<!-- dice cafe badge -->
+<div class="container text-center mt-4 mb-4">
+    <span class="d-inline-flex align-items-center gap-2 text-secondary small">
+        <img src="data:image/webp;base64,UklGRvQBAABXRUJQVlA4IOgBAAAwCgCdASowADAAPjEWiEMiISEVXVYAIAMEs4BZHLwaiP4VXNMEk8wd1k0lDk49Fi2d6E4o/TEk2lCgbVzN+qOoJiQrjel96p3tDIDOvEiUBVn6s4BGV3cc3ugA/v/+GM+eBJr7D+3rHx9pwWBB2aRPL11RCConf7MD+ya6/7+suTFFQ2lcEOra4Pcvom881LLQzrtiUvqZ1EGkp0OP8gvHjq2tC6r8Qrd2d9+PtBVRcmk53+nZjsa1yuYpK2NdRbrRU42Mc1yWXF0rzQ2YV8WZEkuCzuojCuwK1apnS8FrP2JhdBkJTppIXhBwWlUx3D1/Y4p9HltW8tSQ+Y4HocrPbol6b9vdaS/NiYrNpOvkqHT8QpJfsN10M032Cs9h/rubMk+BTYt9zKkfUz66+Rr0dTYx0qhIu3eIX3psWJ8EfXw65kc8dFd11y6548lFyy4oBm0XwR5fqs5SqcMJwzMBJSFB02o2S6Xn+rg1BcyxN2cLaDg5QnI3aAt/XExcc8cLYziajLeu2VWloffOv5h5jL2ZGYNlaXGbPkMeVg+N4O8Nd5mOWGPzCO6fQv5n736EJX5dgqHK4gx2ceD+UaJu57P14czKmrOcfk43845OJE2Q/vh0U/my7Nik6365eT9Kvwa2K3tAAA==" alt="" width="24" height="24" class="rounded-circle">
+        <span>made at <a href="https://dicecafe.org" target="_blank" rel="noopener noreferrer" class="text-decoration-none">dice cafe</a></span>
+    </span>
 </div>
 
 <!-- Spinner Overlay -->
