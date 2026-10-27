@@ -209,6 +209,12 @@ def test_index_form(client):
     assert r.status_code == 200 and b"Google Maps URL to Waze" in r.data
 
 
+def test_index_dicecafe_badge(client):
+    page = client.get("/").get_data(as_text=True)
+    assert 'href="https://dicecafe.org"' in page
+    assert "digitalocean" not in page.lower()
+
+
 def test_index_issue_5_short_link(client, fake_net):
     redirects, _, calls = fake_net
     redirects["https://maps.app.goo.gl/pin"] = (
