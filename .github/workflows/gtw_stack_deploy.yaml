@@ -125,7 +125,7 @@ jobs:
           docker run -d --name temp-nginx \
             -p 80:80 \
             -v /var/www/certbot:/var/www/certbot:ro \
-            --entrypoint "/bin/sh" nginx:latest -c "
+            --entrypoint "/bin/sh" nginx:1.31.9 -c "
           echo '
           server {
               listen 80;

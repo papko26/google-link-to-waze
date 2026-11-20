@@ -15,7 +15,7 @@ services:
     restart: always
 
   nginx:
-    image: nginx:latest
+    image: nginx:1.31.9  # pinned: fixes CVE-2026-123007 and CVE-2026-123633 (HTTP/2); bump deliberately
     container_name: nginx
     depends_on:
       - app
